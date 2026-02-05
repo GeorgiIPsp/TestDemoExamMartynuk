@@ -1,0 +1,23 @@
+﻿<Page x:Class="ExamenDem_First.Login"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ExamenDem_First"
+      mc:Ignorable="d" 
+      d:DesignHeight="750" d:DesignWidth="900"
+      Title="Login" 
+      Background="White">
+
+    <Grid>
+        
+        <Image HorizontalAlignment="Center" Source="/media/logo.png" Height="100" Margin="0,52,0,0" VerticalAlignment="Top" Width="100" RenderTransformOrigin="1.309,0.522"/>
+        <Label Content="Логин" HorizontalAlignment="Center" Margin="0,180,0,0" VerticalAlignment="Top" FontSize="20" RenderTransformOrigin="0.565,0.593"/>
+        <Label Content="Пароль" HorizontalAlignment="Center" Margin="0,265,0,0" VerticalAlignment="Top" FontSize="20" RenderTransformOrigin="0.565,0.593"/>
+        <TextBox Name="LoginBox" HorizontalAlignment="Center" Margin="0,227,0,0" Height="20" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160"/>
+        <PasswordBox Name="PasswordBox" HorizontalAlignment="Center" Margin="0,315,0,0" VerticalAlignment="Top" Width="160" Height="20"/>
+        <Button Width="100" Background="#00FA9A" Height="30" Name="LoginButton" Content="Войти" HorizontalAlignment="Center" Margin="0,358,0,0" VerticalAlignment="Top" Click="LoginButton_Click"></Button>
+        <Button Width="100" Background="#FFA500" Height="30" Name="LoginButtonNotRole" Content="Войти как гость" HorizontalAlignment="Center" Margin="0,400,0,0" VerticalAlignment="Top" Click="LoginButtonNotLogin_Click"></Button>
+
+    </Grid>
+</Page>

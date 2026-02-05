@@ -1,0 +1,115 @@
+﻿<Page x:Class="ExamenDem_First.Equipment"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ExamenDem_First"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="Equipment"
+      Background="White">
+
+    <Grid>
+        <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
+
+        <TextBlock FontSize="18" HorizontalAlignment="Left" Margin="623,10,0,0" TextWrapping="Wrap" Text="" Name="fioWorker" VerticalAlignment="Top" Width="167"/>
+        <Button Name="ExitToLogin" Width="50" Height="20" Background="#FFA500" Content="Выход" HorizontalAlignment="Left" Margin="16,7,0,0" VerticalAlignment="Top" Click="ExitToLogin_Click"/>
+        <ListBox x:Name="ListEquipment" 
+         Width="800"
+         Height="390"
+         Margin="2,30,-2,30"
+                 HorizontalContentAlignment="Stretch"
+         BorderThickness="1"
+         BorderBrush="LightGray"
+         Background="White"
+         ScrollViewer.VerticalScrollBarVisibility="Auto"
+         d:ItemsSource="{d:SampleData ItemCount=5}">
+            <ListBox.ItemTemplate>
+                <DataTemplate >
+                    <Border 
+                    Padding="10"
+                    Margin="0,15,0,0"
+                    Height="Auto"
+                        Width="765"
+                    BorderBrush="Black"
+                    BorderThickness="1">
+                        <Grid>
+
+                            <!-- Изображение слева -->
+                            <Image Grid.Column="0"
+                           Height="120"
+                           Width="120"
+                                   Margin="0,-10,0,0"
+                           Source="{Binding Photo}"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Top"
+                           Stretch="UniformToFill"/>
+
+
+
+                            <!-- Текстовая информация справа -->
+                            <StackPanel Grid.Column="1"
+                                Margin="255,0,0,0"
+                                Orientation="Vertical"
+                                VerticalAlignment="Top">
+                                <!-- Название оборудования -->
+                                <TextBlock Text="{Binding TitleEquipment}"
+                                   FontWeight="Bold"
+                                   FontSize="16"
+                                   Foreground="#2C3E50"
+                                   TextWrapping="Wrap"/>
+
+                                <!-- Описание -->
+                                <TextBlock Text="{Binding Description}"
+                                   Margin="0,5,55,0"
+                                   FontSize="14"
+                                   Foreground="#34495E"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="450"/>
+                                <Border Margin="0,10,0,0"  Background="{Binding BushStatus}" VerticalAlignment="Top" Height="20" Width="190" HorizontalAlignment="Left">
+                                    <Grid x:Name="GridStatus" >
+                                        <TextBlock Text="{Binding Status}"
+                                    Height="20"
+                                                   Width="190"
+                                     VerticalAlignment="Center"
+                                     x:Name="StatusTextBlock"
+                                     Visibility="{Binding StatusVisibility}"
+                                     FontWeight="SemiBold"
+                                     Foreground="Black"
+                                       Margin="0,0,5,0"/>
+                                    </Grid>
+                                </Border>
+                                <StackPanel Orientation="Horizontal"
+                                     Margin="0,8,0,0">
+                                    <TextBlock Text="Аудитория:"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7F8C8D"
+                                       Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding NumberAudience}"
+                                       FontWeight="Medium"
+                                       Foreground="#16A085"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal"
+                                     Margin="0,8,0,0">
+                                    <TextBlock Text="Подразделение:"
+                                        FontWeight="SemiBold"
+                                        Foreground="#7F8C8D"
+                                         Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding OfficesString}"
+                                       FontWeight="Medium"
+                                               Width="300"
+                                        TextWrapping="Wrap"
+                                        Foreground="#215"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                        </Grid>
+
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+
+        </ListBox>
+    </Grid>
+</Page>
