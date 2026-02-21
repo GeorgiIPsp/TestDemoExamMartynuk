@@ -34,114 +34,65 @@ namespace ExamenDem_First
 
         private void FindRole()
         {
-            // Проверка на отсутствие авторизованного пользователя
             if (UserRole.CurrentUser == null || UserRole.CurrentUser.Id == 0)
             {
                 user_role = "Гость";
                 return;
             }
 
-            // Флаг, чтобы прервать поиск после нахождения
-            bool found = false;
+            var worker = db.Workers.FirstOrDefault(w => w.IdWorker == UserRole.CurrentUser.Id);
 
-            // Перебираем всех работников
-            foreach (var work in db.Workers.ToList())
-            {
-                // Проверяем, совпадает ли IdWorker с Id текущего пользователя
-                if (work.IdWorker == UserRole.CurrentUser.Id)
-                {
-                    // Теперь ищем должность этого работника
-                    foreach (var post in db.Posts.ToList())
-                    {
-                        if (work.IdPost == post.IdPost)
-                        {
-                            user_role = post.TitlePost;
-                            found = true;
-                            break; // Выходим из цикла по должностям
-                        }
-                    }
-
-                    if (found) break; // Выходим из цикла по работникам
-                }
-            }
-
-            // Если роль не найдена — устанавливаем значение по умолчанию
-            if (!found)
+            if (worker == null)
             {
                 user_role = "без должности";
+                return;
             }
+
+            var post = db.Posts.FirstOrDefault(p => p.IdPost == worker.IdPost);
+
+            user_role = post != null ? post.TitlePost : "без должности";
         }
+
 
 
 
         public void outputInfo()
         {
             string number_room = "";
-
-            // 1. Фильтруем оборудование в зависимости от роли
             List<Models.Equipment> filteredEquipment = new List<Models.Equipment>();
 
             if (user_role == "администратор бд" || user_role == "инженер")
             {
-                // Администратор видит всё
                 filteredEquipment = db.Equipment.ToList();
             }
             else if (user_role == "заведующий" || user_role == "техник" || user_role == "лаборант")
             {
-                // Заведующий видит только своё оборудование в своём офисе
-                var currentWorker = db.Workers
-                    .FirstOrDefault(w => w.IdWorker == UserRole.CurrentUser.Id);
-
-                if (currentWorker == null)
-                {
-                    // ...
-                }
-                else
+                var currentWorker = db.Workers.FirstOrDefault(w => w.IdWorker == UserRole.CurrentUser.Id);
+                if (currentWorker != null)
                 {
                     filteredEquipment = db.Equipment
-                        .Where(eq => eq.IdWorker == UserRole.CurrentUser.Id ||
-                                   eq.IdOffices == currentWorker.IdOffices)
+                        .Where(eq => eq.IdWorker == UserRole.CurrentUser.Id || eq.IdOffices == currentWorker.IdOffices)
                         .ToList();
                 }
             }
             else if (user_role == "Гость")
             {
-                // Сохраняем ваши циклы, но исправляем логику
-                foreach (var eq in db.Equipment.ToList())
-                {
-                    foreach (var au in db.Audiences.ToList())
-                    {
-                        
-                        if ((eq.IdAudience == null || eq.IdAudience == au.IdAudience) &&
-                            au.NumberAudience == "склад" &&
-                            eq.IdWorker == null &&
-                            eq.IdOffices == null)
-                        {
-                            // Чтобы избежать дублирования, проверяем, не добавили ли уже эту запись
-                            if (!filteredEquipment.Contains(eq))
-                            {
-                                filteredEquipment.Add(eq);
-                            }
-                        }
-                    }
+                var aud = db.Audiences.FirstOrDefault(a => a.NumberAudience == "склад");
+                int? audId = aud != null ? (int?)aud.IdAudience : null;
 
-                    // Отдельно обрабатываем случай, когда у оборудования нет аудитории (IdAudience == null)
-                    // и при этом IdWorker и IdOffices равны null
-                    if (eq.IdAudience == null && eq.IdWorker == null && eq.IdOffices == null)
-                    {
-                        if (!filteredEquipment.Contains(eq))
-                        {
-                            filteredEquipment.Add(eq);
-                        }
-                    }
-                }
-            }
-            else if (user_role == "без должности")
-            {
-                MessageBox.Show("Без");
-            }
+                var equipmentQuery = db.Equipment.Where(eq =>
+                    ((eq.IdAudience == null || eq.IdAudience == audId) &&
+                     eq.IdWorker == null && eq.IdOffices == null) ||
+                    (eq.IdAudience == null && eq.IdWorker == null && eq.IdOffices == null));
 
-            // 2. Обрабатываем отфильтрованные записи (добавляем фото, аудитории и т. д.)
+                filteredEquipment = equipmentQuery.Distinct().ToList();
+            }
+            
+
+            var audiences = db.Audiences.ToList();
+            var offices = db.Offices.ToList();
+            var workers = db.Workers.ToList();
+
             foreach (var eq in filteredEquipment)
             {
                 if (eq.Photo == null)
@@ -149,70 +100,48 @@ namespace ExamenDem_First
                     eq.Photo = "../media/stub.jpg";
                 }
 
-                foreach (var ad in db.Audiences.ToList())
-                {
-                    if (eq.IdAudience == ad.IdAudience)
-                    {
-                        eq.NumberAudience = ad.NumberAudience;
-                    }
-                    else if (eq.IdAudience == null)
-                    {
-                        eq.NumberAudience = "-";
-                    }
-                }
+                eq.NumberAudience = audiences.Any(a => a.IdAudience == eq.IdAudience)
+                    ? audiences.First(a => a.IdAudience == eq.IdAudience).NumberAudience
+                    : "-";
 
-                bool found = false;
-                foreach (var off in db.Offices.ToList())
+                var office = offices.FirstOrDefault(o => o.IdOffice == eq.IdOffices);
+                if (office != null)
                 {
-                    if (eq.IdOffices != null)
+                    eq.OfficesString = office.Abbreviated;
+                }
+                else
+                {
+                    var worker = workers.FirstOrDefault(w => w.IdWorker == eq.IdWorker);
+                    if (worker != null)
                     {
-                        if (eq.IdOffices == off.IdOffice)
-                        {
-                            eq.OfficesString = off.Abbreviated;
-                            found = true;
-                        }
+                        var workerOffice = offices.FirstOrDefault(o => o.IdOffice == worker.IdOffices);
+                        eq.OfficesString = workerOffice?.Abbreviated ?? "-";
                     }
-                    else 
-                    {
-                        foreach(var work in db.Workers.ToList())
-                        {
-                            if(eq.IdWorker == work.IdWorker)
-                            {
-                                if(work.IdOffices == off.IdOffice)
-                                {
-                                    eq.OfficesString = off.Abbreviated;
-                                    found = true;
-                                }
-                            }
-                        }
-                    }
-                    if(found == false)
+                    else
                     {
                         eq.OfficesString = "-";
                     }
-                    
                 }
-                
 
-                // 3. Устанавливаем видимость StatusTextBlock для каждой строки
-                eq.StatusVisibility = (user_role == "администратор бд" || user_role == "заведующий" || user_role ==  "инженер")
+                eq.StatusVisibility = (user_role == "администратор бд" || user_role == "заведующий" || user_role == "инженер")
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+
                 if (user_role == "администратор бд" || user_role == "заведующий" || user_role == "инженер")
                 {
-                    if ((eq.DateTransferToCompanyBalance.Year + eq.StandardServiceLife) > DateTime.Now.Year)
+                    int endYear = eq.DateTransferToCompanyBalance.Year + eq.StandardServiceLife;
+                    if (endYear > DateTime.Now.Year)
                     {
-                        eq.Status = $"Статус: годен до {eq.DateTransferToCompanyBalance.Year + eq.StandardServiceLife}";
-
+                        eq.Status = $"Статус: годен до {endYear}";
                     }
-                    else if ((eq.DateTransferToCompanyBalance.Year + eq.StandardServiceLife) == DateTime.Now.Year)
+                    else if (endYear == DateTime.Now.Year)
                     {
-                        eq.Status = $"Статус: истекает в текущем году";
+                        eq.Status = "Статус: истекает в текущем году";
                         eq.BushStatus = "#FFA500";
                     }
-                    else if ((eq.DateTransferToCompanyBalance.Year + eq.StandardServiceLife) < DateTime.Now.Year)
+                    else
                     {
-                        eq.Status = $"Статус: истек";
+                        eq.Status = "Статус: истек";
                         eq.BushStatus = "#E32636";
                     }
                 }
@@ -222,9 +151,10 @@ namespace ExamenDem_First
         }
 
 
+
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
-           
+            SortWeight.SelectedIndex = 0;
                 outputInfo();
            
             foreach (var work in db.Workers.ToList())
@@ -242,7 +172,6 @@ namespace ExamenDem_First
 
                 }
             }
-
         }
         
         private void ExitToLogin_Click(object sender, RoutedEventArgs e)
@@ -252,6 +181,51 @@ namespace ExamenDem_First
             if (mainwindow != null)
             {
                 mainwindow.MainFrame.Navigate(new Login());
+            }
+        }
+
+        private void SortWeight_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(SortWeight.SelectedValue != null)
+            {
+                var currentItems = ListEquipment.Items
+                    .Cast<Models.Equipment>()
+                    .ToList();
+                var curreentItemsGlobal = ListEquipment.Items.Cast<Models.Equipment>().ToList();
+                List<Models.Equipment> equipment = new List<Models.Equipment>();
+                
+                if (SortWeight.SelectedIndex.ToString() == "1")
+                {
+
+                    equipment = currentItems.OrderBy(e => e.WeightInKg).ToList();
+                    ListEquipment.ItemsSource = equipment;
+
+                }
+                else if (SortWeight.SelectedIndex.ToString() == "2")
+                {
+                    equipment = currentItems.OrderByDescending(e => e.WeightInKg).ToList();
+                    ListEquipment.ItemsSource = equipment;
+                }
+                else if(SortWeight.SelectedIndex.ToString() == "0")
+                {
+                    outputInfo();
+                }
+            }
+        }
+
+        private void Search_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if(Search.Text != null)
+            {
+                List<Models.Equipment> equipment = new List<Models.Equipment>();
+
+                equipment = db.Equipment.ToList();
+                var filtered = equipment.Where(e => e.TitleEquipment != null && e.TitleEquipment.ToLower().Contains(Search.Text.ToLower()));
+                ListEquipment.ItemsSource = filtered;
+            }
+            else if (string.IsNullOrEmpty(Search.Text))
+            {
+                outputInfo();
             }
         }
     }

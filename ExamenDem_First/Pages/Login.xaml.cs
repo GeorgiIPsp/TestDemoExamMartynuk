@@ -35,55 +35,40 @@ namespace ExamenDem_First
             if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(passwordd))
             {
                 MessageBox.Show("Логин или пароль не может быть пустыми!");
-                return; // Прерываем выполнение
+                return;
             }
 
-            bool loginFound = false;
-            bool passwordCorrect = false;
+            var user = db.Users.FirstOrDefault(u => u.Login == login);
 
-            foreach (var users in db.Users.ToList())
-            {
-                if (login == users.Login)
-                {
-                    loginFound = true;
-
-                    if (passwordd == users.Password)
-                    {
-                        passwordCorrect = true;
-
-                        foreach (var workers in db.Workers.ToList())
-                        {
-                            if (users.IdWorker == workers.IdWorker)
-                            {
-                                UserRole.SetCurrentUser(workers.IdWorker);
-
-                                var mainwindow = Application.Current.MainWindow as MainWindow;
-                                if (mainwindow != null)
-                                {
-                                    mainwindow.MainFrame.Navigate(new Equipment());
-                                }
-                                break; // Выходим из цикла по работникам
-                            }
-                        }
-                        break; // Выходим из цикла по пользователям
-                    }
-                    else
-                    {
-                        MessageBox.Show("Пароль неверный!");
-                        break; // Некорректный пароль — прерываем
-                    }
-                }
-            }
-
-            // Если логин не найден ни в одной записи
-            if (!loginFound)
+            if (user == null)
             {
                 MessageBox.Show("Логин не верный!");
+                return;
+            }
+
+            if (user.Password != passwordd)
+            {
+                MessageBox.Show("Пароль неверный!");
+                return;
+            }
+
+            var worker = db.Workers.FirstOrDefault(w => w.IdWorker == user.IdWorker);
+
+            if (worker != null)
+            {
+                UserRole.SetCurrentUser(worker.IdWorker);
+
+                var mainwindow = Application.Current.MainWindow as MainWindow;
+                if (mainwindow != null)
+                {
+                    mainwindow.MainFrame.Navigate(new Equipment());
+                }
             }
         }
 
 
-        private void LoginButtonNotLogin_Click(object sender, RoutedEventArgs e)
+
+        private void LoginButtonGuest_Click(object sender, RoutedEventArgs e)
         {
             UserRole.CurrentUser = null;
             var mainwindow = Application.Current.MainWindow as MainWindow;
