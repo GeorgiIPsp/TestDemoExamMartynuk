@@ -40,6 +40,7 @@ namespace ExamenDem_First
             {
                 this.Title = "Добавление оборудования";
                 AddOrEditButton.Content = "Добавить";
+                DeleteButton.Visibility = Visibility.Hidden;
 
                 if (role_user == "администратор бд")
                 {
@@ -156,9 +157,35 @@ namespace ExamenDem_First
                         {
                             Audiences.SelectedIndex = 0;
                         }
+
+                        // Проверка условий для удаления
+                        if (currentEquipment != null)
+                        {
+                            var audience = db.Audiences.FirstOrDefault(a => a.IdAudience == currentEquipment.IdAudience);
+                            bool isOnStock = audience != null && audience.NumberAudience != null && audience.NumberAudience.ToLower() == "склад";
+
+                            int endYear = currentEquipment.DateTransferToCompanyBalance.Year + currentEquipment.StandardServiceLife;
+                            bool isExpired = endYear < DateTime.Now.Year;
+
+                            if (isOnStock && isExpired)
+                            {
+                                DeleteButton.Visibility = Visibility.Visible;
+                                DeleteButton.IsEnabled = true;
+                            }
+                            else
+                            {
+                                DeleteButton.Visibility = Visibility.Collapsed;
+                            }
+                        }
+                        else
+                        {
+                            DeleteButton.Visibility = Visibility.Collapsed;
+                        }
                     }
                     else if (role_user == "заведующий")
                     {
+                        DeleteButton.Visibility = Visibility.Collapsed;
+
                         var currentWorker = db.Workers.FirstOrDefault(w => w.IdWorker == UserRole.CurrentUser.Id);
                         if (currentWorker != null)
                         {
@@ -212,6 +239,7 @@ namespace ExamenDem_First
                     Audiences.IsEnabled = false;
                     SelectPhotoButton.IsEnabled = false;
                     AddOrEditButton.Visibility = System.Windows.Visibility.Collapsed;
+                    DeleteButton.Visibility = Visibility.Collapsed;
                 }
 
                 if (role_user == "администратор бд" || role_user == "заведующий")
@@ -222,6 +250,90 @@ namespace ExamenDem_First
             }
 
             ComboBoxOffice.SelectionChanged += ComboBoxOffice_SelectionChanged;
+        }
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (role_user != "администратор бд")
+                {
+                    MessageBox.Show("Только администратор может удалять оборудование!", "Доступ запрещен", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (currentEquipment == null)
+                {
+                    MessageBox.Show("Оборудование не найдено!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var audience = db.Audiences.FirstOrDefault(a => a.IdAudience == currentEquipment.IdAudience);
+                bool isOnStock = audience != null && audience.NumberAudience.ToLower() == "склад";
+
+                if (!isOnStock)
+                {
+                    MessageBox.Show("Оборудование можно удалять только со склада!", "Удаление невозможно", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                int endYear = currentEquipment.DateTransferToCompanyBalance.Year + currentEquipment.StandardServiceLife;
+                bool isExpired = endYear < DateTime.Now.Year;
+
+                if (!isExpired)
+                {
+                    MessageBox.Show("Можно удалять только оборудование с истекшим сроком использования!", "Удаление невозможно", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var result = MessageBox.Show($"Вы уверены, что хотите удалить оборудование '{currentEquipment.TitleEquipment}'?\nЭто действие нельзя отменить!",
+                    "Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    if (!string.IsNullOrEmpty(currentEquipment.Photo) && File.Exists(currentEquipment.Photo))
+                    {
+                        try
+                        {
+                            File.Delete(currentEquipment.Photo);
+                        }
+                        catch { }
+                    }
+
+                    db.Equipment.Remove(currentEquipment);
+                    db.SaveChanges();
+
+                    foreach (Window window in Application.Current.Windows)
+                    {
+                        if (window.Title == "MainWindow" || window is MainWindow)
+                        {
+                            var frame = window.FindName("MainFrame") as System.Windows.Controls.Frame;
+                            if (frame != null)
+                            {
+                                frame.Navigate(new Equipment());
+                                break;
+                            }
+                        }
+                    }
+                    foreach (Window window in Application.Current.Windows)
+                    {
+                        if (window.Title == "MainWindow" || window is MainWindow)
+                        {
+                            var frame = window.FindName("MainFrame") as System.Windows.Controls.Frame;
+                            if (frame != null)
+                            {
+                                frame.Navigate(new Equipment());
+                                break;
+                            }
+                        }
+                    }
+                    MessageBox.Show("Оборудование успешно удалено!", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                    this.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ComboBoxOffice_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -441,6 +553,18 @@ namespace ExamenDem_First
                     {
                         db.Equipment.Add(equipment);
                         db.SaveChanges();
+                        foreach (Window window in Application.Current.Windows)
+                        {
+                            if (window.Title == "MainWindow" || window is MainWindow)
+                            {
+                                var frame = window.FindName("MainFrame") as System.Windows.Controls.Frame;
+                                if (frame != null)
+                                {
+                                    frame.Navigate(new Equipment());
+                                    break;
+                                }
+                            }
+                        }
                         MessageBox.Show("Оборудование успешно добавлено!", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     catch (Exception ex)

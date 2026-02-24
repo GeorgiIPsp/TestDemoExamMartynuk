@@ -28,6 +28,6 @@
         <TextBlock FontSize="10" HorizontalAlignment="Left" Margin="239,130,0,0" TextWrapping="Wrap" Text="Дата постановки" VerticalAlignment="Top"/>
         <TextBox Name="InventNumber" Height="17" HorizontalAlignment="Left" Margin="361,111,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="80"/>
         <TextBlock FontSize="10" HorizontalAlignment="Left" Margin="368,93,0,0" TextWrapping="Wrap" Text="Инвент. номер" VerticalAlignment="Top"/>
-
+        <Button Name="DeleteButton" Background="Red" Foreground="White" Content="Удалить" HorizontalAlignment="Left" Margin="349,369,0,0" VerticalAlignment="Top" Width="80" Height="20" Click="DeleteButton_Click"/>
     </Grid>
 </Window>

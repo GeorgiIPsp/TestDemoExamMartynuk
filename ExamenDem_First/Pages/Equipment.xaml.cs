@@ -204,18 +204,18 @@ namespace ExamenDem_First
 
         private void ApplyFilters()
         {
-            List<Models.Equipment> filteredEquipment = new List<Models.Equipment>();
+            List<Models.Equipment> baseEquipment = new List<Models.Equipment>();
 
             if (user_role == "администратор бд" || user_role == "инженер")
             {
-                filteredEquipment = db.Equipment.ToList();
+                baseEquipment = db.Equipment.ToList();
             }
             else if (user_role == "заведующий" || user_role == "техник" || user_role == "лаборант")
             {
                 var currentWorker = db.Workers.FirstOrDefault(w => w.IdWorker == UserRole.CurrentUser.Id);
                 if (currentWorker != null)
                 {
-                    filteredEquipment = db.Equipment
+                    baseEquipment = db.Equipment
                         .Where(eq => eq.IdWorker == UserRole.CurrentUser.Id || eq.IdOffices == currentWorker.IdOffices)
                         .ToList();
                 }
@@ -233,44 +233,21 @@ namespace ExamenDem_First
                 SortWeight.Visibility = Visibility.Hidden;
                 Search.Visibility = Visibility.Hidden;
                 AddEquipment.Visibility = Visibility.Hidden;
-                filteredEquipment = equipmentQuery.Distinct().ToList();
+                baseEquipment = equipmentQuery.Distinct().ToList();
             }
-
-            var filtered = filteredEquipment.AsEnumerable();
-
-            if (FilterPodrazdelenia.SelectedValue != null && Convert.ToInt32(FilterPodrazdelenia.SelectedValue) != 0)
-            {
-                int selectedOfficeId = Convert.ToInt32(FilterPodrazdelenia.SelectedValue);
-                filtered = filtered.Where(eq => eq.IdOffices == selectedOfficeId);
-            }
-
-            if (!string.IsNullOrEmpty(Search.Text))
-            {
-                filtered = filtered.Where(eq => eq.TitleEquipment != null &&
-                    eq.TitleEquipment.ToLower().Contains(Search.Text.ToLower()));
-            }
-
-            if (SortWeight.SelectedIndex == 1)
-            {
-                filtered = filtered.OrderBy(eq => eq.WeightInKg);
-            }
-            else if (SortWeight.SelectedIndex == 2)
-            {
-                filtered = filtered.OrderByDescending(eq => eq.WeightInKg);
-            }
-
-            var resultList = filtered.ToList();
 
             var audiences = db.Audiences.ToList();
             var offices = db.Offices.ToList();
             var workers = db.Workers.ToList();
 
-            foreach (var eq in resultList)
+            // Сначала заполняем вспомогательные поля для поиска
+            foreach (var eq in baseEquipment)
             {
                 if (eq.Photo == null || !File.Exists(eq.Photo))
                 {
                     eq.Photo = "../media/stub.jpg";
                 }
+
                 eq.NumberAudience = audiences.Any(a => a.IdAudience == eq.IdAudience)
                     ? audiences.First(a => a.IdAudience == eq.IdAudience).NumberAudience
                     : "-";
@@ -293,7 +270,45 @@ namespace ExamenDem_First
                         eq.OfficesString = "-";
                     }
                 }
+            }
 
+            var filtered = baseEquipment.AsEnumerable();
+
+            // Фильтрация по подразделению
+            if (FilterPodrazdelenia.SelectedValue != null && Convert.ToInt32(FilterPodrazdelenia.SelectedValue) != 0)
+            {
+                int selectedOfficeId = Convert.ToInt32(FilterPodrazdelenia.SelectedValue);
+                filtered = filtered.Where(eq => eq.IdOffices == selectedOfficeId);
+            }
+
+            // ПОИСК ПО ВСЕМ ТЕКСТОВЫМ АТРИБУТАМ
+            if (!string.IsNullOrEmpty(Search.Text))
+            {
+                string searchText = Search.Text.ToLower();
+                filtered = filtered.Where(eq =>
+                    (eq.TitleEquipment != null && eq.TitleEquipment.ToLower().Contains(searchText)) ||
+                    (eq.InventoryNumber != null && eq.InventoryNumber.ToLower().Contains(searchText)) ||
+                    (eq.Description != null && eq.Description.ToLower().Contains(searchText)) ||
+                    (eq.NumberAudience != null && eq.NumberAudience.ToLower().Contains(searchText)) ||
+                    (eq.OfficesString != null && eq.OfficesString.ToLower().Contains(searchText))
+                );
+            }
+
+            // Сортировка по весу
+            if (SortWeight.SelectedIndex == 1)
+            {
+                filtered = filtered.OrderBy(eq => eq.WeightInKg);
+            }
+            else if (SortWeight.SelectedIndex == 2)
+            {
+                filtered = filtered.OrderByDescending(eq => eq.WeightInKg);
+            }
+
+            var resultList = filtered.ToList();
+
+           
+            foreach (var eq in resultList)
+            {
                 eq.StatusVisibility = (user_role == "администратор бд" || user_role == "заведующий" || user_role == "инженер")
                     ? Visibility.Visible
                     : Visibility.Collapsed;
@@ -317,6 +332,7 @@ namespace ExamenDem_First
                     }
                 }
             }
+
             ListEquipment.ItemsSource = resultList;
         }
 
