@@ -12,7 +12,7 @@
     <Grid>
         <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden"/>
 
-        <TextBlock FontSize="18" HorizontalAlignment="Left" Margin="623,10,0,0" TextWrapping="Wrap" Text="" Name="fioWorker" VerticalAlignment="Top" Width="167"/>
+        <TextBlock FontSize="18" HorizontalAlignment="Left" Margin="691,4,0,0" TextWrapping="Wrap" Text="" Name="fioWorker" VerticalAlignment="Top" Width="89"/>
         <Button Name="ExitToLogin" Width="50" Height="20" Background="#FFA500" Content="Выход" HorizontalAlignment="Left" Margin="16,7,0,0" VerticalAlignment="Top" Click="ExitToLogin_Click"/>
         <ListBox x:Name="ListEquipment" 
          Width="800"
@@ -23,7 +23,7 @@
          BorderBrush="LightGray"
          Background="White"
          ScrollViewer.VerticalScrollBarVisibility="Auto"
-         d:ItemsSource="{d:SampleData ItemCount=5}">
+         d:ItemsSource="{d:SampleData ItemCount=5}" SelectionChanged="ListEquipment_SelectionChanged">
             <ListBox.ItemTemplate>
                 <DataTemplate >
                     <Border 
@@ -40,10 +40,12 @@
                            Height="120"
                            Width="120"
                                    Margin="0,-10,0,0"
-                           Source="{Binding Photo}"
+                           Source="{Binding Photo, IsAsync=True}"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Top"
-                           Stretch="UniformToFill"/>
+                           Stretch="UniformToFill">
+                                
+                            </Image>
 
 
 
@@ -115,12 +117,14 @@
 
 
         </ListBox>
-        <ComboBox Name="SortWeight" HorizontalAlignment="Left" Margin="98,5,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="SortWeight_SelectionChanged">
+        <ComboBox Name="SortWeight" HorizontalAlignment="Left" Margin="80,5,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="SortWeight_SelectionChanged">
             <ComboBoxItem Content="Без сортировки"></ComboBoxItem>
             <ComboBoxItem Content="По возрастанию"></ComboBoxItem>
             <ComboBoxItem Content="По убыванию"></ComboBoxItem>
         </ComboBox>
-        <TextBox Name="Search" HorizontalAlignment="Left" Margin="250,9,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120" TextChanged="Search_TextChanged"/>
+        <ComboBox Name="FilterPodrazdelenia" HorizontalAlignment="Left" Margin="206,5,0,0" VerticalAlignment="Top" Width="163"/>
+        <TextBox Name="Search" HorizontalAlignment="Left" Margin="378,9,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120" TextChanged="Search_TextChanged"/>
+        <Button Content="Добавить оборудование" Name="AddEquipment" Background="LightGreen" HorizontalAlignment="Left" Margin="515,7,0,0" VerticalAlignment="Top" Height="22" Width="159" Click="AddEquipment_Click"/>
 
     </Grid>
 </Page>

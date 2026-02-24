@@ -47,4 +47,5 @@ public partial class Equipment
     public string Status { get; set; }
     [NotMapped]
     public string BushStatus { get; set; }
+
 }
