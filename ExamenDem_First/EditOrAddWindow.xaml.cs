@@ -158,7 +158,7 @@ namespace ExamenDem_First
                             Audiences.SelectedIndex = 0;
                         }
 
-                        // Проверка условий для удаления
+                        
                         if (currentEquipment != null)
                         {
                             var audience = db.Audiences.FirstOrDefault(a => a.IdAudience == currentEquipment.IdAudience);
@@ -290,49 +290,77 @@ namespace ExamenDem_First
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    if (!string.IsNullOrEmpty(currentEquipment.Photo) && File.Exists(currentEquipment.Photo))
+                    using (var transaction = db.Database.BeginTransaction())
                     {
                         try
                         {
-                            File.Delete(currentEquipment.Photo);
-                        }
-                        catch { }
-                    }
-
-                    db.Equipment.Remove(currentEquipment);
-                    db.SaveChanges();
-
-                    foreach (Window window in Application.Current.Windows)
-                    {
-                        if (window.Title == "MainWindow" || window is MainWindow)
-                        {
-                            var frame = window.FindName("MainFrame") as System.Windows.Controls.Frame;
-                            if (frame != null)
+                            var writeOffRecords = db.Set<EquipmentWriteOff>().Where(wo => wo.IdEquipment == currentEquipment.IdEquipment).ToList();
+                            if (writeOffRecords.Any())
                             {
-                                frame.Navigate(new Equipment());
-                                break;
+                                db.Set<EquipmentWriteOff>().RemoveRange(writeOffRecords);
+                                db.SaveChanges();
+                            }
+
+                            currentEquipment.IdAudience = null;
+                            currentEquipment.IdOffices = null;
+                            db.SaveChanges();
+
+                            if (!string.IsNullOrEmpty(currentEquipment.Photo) && File.Exists(currentEquipment.Photo))
+                            {
+                                try
+                                {
+                                    File.Delete(currentEquipment.Photo);
+                                }
+                                catch { }
+                            }
+
+                            db.Equipment.Remove(currentEquipment);
+                            db.SaveChanges();
+
+                            transaction.Commit();
+
+                            foreach (Window window in Application.Current.Windows)
+                            {
+                                if (window.Title == "MainWindow" || window is MainWindow)
+                                {
+                                    var frame = window.FindName("MainFrame") as System.Windows.Controls.Frame;
+                                    if (frame != null)
+                                    {
+                                        frame.Navigate(new Equipment());
+                                        break;
+                                    }
+                                }
+                            }
+
+                            MessageBox.Show("Оборудование успешно удалено!", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
+                            this.Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+
+                            if (ex.InnerException != null)
+                            {
+                                MessageBox.Show($"Ошибка при удалении: {ex.InnerException.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                            }
+                            else
+                            {
+                                MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                             }
                         }
                     }
-                    foreach (Window window in Application.Current.Windows)
-                    {
-                        if (window.Title == "MainWindow" || window is MainWindow)
-                        {
-                            var frame = window.FindName("MainFrame") as System.Windows.Controls.Frame;
-                            if (frame != null)
-                            {
-                                frame.Navigate(new Equipment());
-                                break;
-                            }
-                        }
-                    }
-                    MessageBox.Show("Оборудование успешно удалено!", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
-                    this.Close();
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (ex.InnerException != null)
+                {
+                    MessageBox.Show($"Ошибка при удалении: {ex.InnerException.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    MessageBox.Show($"Ошибка при удалении: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
